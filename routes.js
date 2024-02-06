@@ -5,6 +5,7 @@ const reqHandler = (req, res) => {
     res.setHeader("Content-Type", "text/html");
     res.write(
       `<html>
+      <head><link rel="shortcut icon" href="#"></head>
         <body>
           <form action="/message" method="POST">
             <input type="text" name="message" value="Hello!"/>
@@ -20,19 +21,21 @@ const reqHandler = (req, res) => {
     req.on("data", (chunk) => {
       body.push(chunk);
     });
-    req.on("end", () => {
+    return req.on("end", () => {
       const message = Buffer.concat(body).toString();
       const textMsg = message?.split("=")?.[1];
-      fs.writeFileSync("database.txt", textMsg);
-      res.statusCode = 302;
-
-      res.setHeader("Content-Type", "text/html");
-      res.write(`<html>
-    <body>
-      <span>Received Data: ${textMsg}</span>
-    </body>
-  </html>`);
-      res.end();
+      fs.writeFile("database.txt", textMsg, (err) => {
+        res.statusCode = 302;
+        res.setHeader("Content-Type", "text/html");
+        res.write(`
+        <html>
+          <head><link rel="shortcut icon" href="#"></head>
+          <body>
+            <span>Received Data: ${textMsg}</span>
+          </body>
+        </html>`);
+        return res.end();
+      });
     });
   }
 };
