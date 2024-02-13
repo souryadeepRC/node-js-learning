@@ -1,10 +1,11 @@
 const uuid4 = require("uuid4");
 const path = require("path");
 const fs = require("fs");
+const { getDb } = require("../database/database-mongo");
 
 class Letter {
   constructor({ content, author, price }) {
-    this.__id = uuid4();
+    this._id = uuid4();
     this.content = content || undefined;
     this.author = author || undefined;
     this.status = 200;
@@ -20,31 +21,27 @@ class Letter {
       callback({ title: "Invalid Author", timestamp: this.timestamp });
       return;
     }
-    const filePath = path.resolve(
-      path.dirname(process.mainModule.filename),
-      "data/letter.json"
-    );
-    fs.readFile(filePath, (err, fileContent) => {
-      let letters = [];
-      if (!err) {
-        letters = JSON.parse(fileContent);
-      }
-      const modifiedLetters = [this, ...letters];
-      fs.writeFile(filePath, JSON.stringify(modifiedLetters), (err) => {});
-      callback({ isCreated: true, ...this });
-    });
+    getDb()
+      .collection("daak-room-letters")
+      .insertOne(this)
+      .then((result) => {
+        callback({ isCreated: result.acknowledged, ...this });
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   }
   static fetchAll(callback) {
-    const filePath = path.resolve(
-      path.dirname(process.mainModule.filename),
-      "data/letter.json"
-    );
-    fs.readFile(filePath, (err, fileContent) => {
-      if (err) {
-        callback([]);
-      }
-      callback(JSON.parse(fileContent));
-    });
+    getDb()
+      .collection("daak-room-letters")
+      .find()
+      .toArray()
+      .then((result) => {
+        callback(result);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   }
 }
 module.exports = Letter;
