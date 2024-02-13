@@ -3,11 +3,12 @@ const path = require("path");
 const fs = require("fs");
 
 class Letter {
-  constructor({ content, author }) {
+  constructor({ content, author, price }) {
     this.__id = uuid4();
     this.content = content || undefined;
     this.author = author || undefined;
     this.status = 200;
+    this.price = price;
     this.timestamp = new Date();
   }
   send(callback) {
