@@ -1,4 +1,4 @@
-const sendError = (res, error, errorResInfo) => {
+const sendError = (res, errorResInfo) => (error) => {
   res.status(501).json({
     ...errorResInfo,
     message: "Error occurred!",
