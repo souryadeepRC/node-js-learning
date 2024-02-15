@@ -1,5 +1,6 @@
 const Letter = require("../model/Letter");
 const { sortLetters } = require("../utils/letter-utils");
+const { sendError } = require("./common-controller");
 
 const sendLetter = (req, res) => {
   const letter = new Letter(req.body);
@@ -41,16 +42,45 @@ const fetchLettersByAuthor = (req, res) => {
   });
 };
 const fetchLetter = (req, res) => {
-  Letter.fetchAll((data) => {
-    const requestedLetter = data.filter(
-      (letter) => letter.__id === req.params.letterId
-    )?.[0];
-    res.status(200).json(requestedLetter);
+  try {
+    Letter.findById(req.params.letterId, (data) => {
+      res.status(200).json(data);
+    });
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+const updateLetter = (req, res) => {
+  const letter = new Letter(req.body);
+  letter.send((result) => {
+    res.status(201).json(result);
   });
+};
+const deleteLetter = (req, res) => {
+  try {
+    const letterId = req.body._id;
+    Letter.deleteById(letterId)
+      .then((result) => {
+        if (result?.deletedCount) {
+          res
+            .status(202)
+            .json({ _id: letterId, message: "Deleted Successfully!" });
+        } else {
+          res.status(202).json({ _id: letterId, message: "No Records Found!" });
+        }
+      })
+      .catch((err) => {
+        sendError(res, err, { _id: req.body._id });
+      });
+  } catch (err) {
+    sendError(res, err, { _id: req.body._id });
+  }
 };
 module.exports = {
   sendLetter,
   fetchLetter,
   fetchLetters,
+  updateLetter,
+  deleteLetter,
   fetchLettersByAuthor,
 };

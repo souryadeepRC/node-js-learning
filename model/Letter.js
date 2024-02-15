@@ -1,16 +1,15 @@
 const uuid4 = require("uuid4");
-const path = require("path");
-const fs = require("fs");
+const { ObjectId } = require("mongodb");
 const { getDb } = require("../database/database-mongo");
 
 class Letter {
-  constructor({ content, author, price }) {
-    this._id = uuid4();
-    this.content = content || undefined;
-    this.author = author || undefined;
-    this.status = 200;
+  constructor({ _id, content, author, price, created_ts }) {
+    this._id = _id ? new ObjectId(_id) : null;
+    this.content = content || null;
+    this.author = author || null;
     this.price = price;
-    this.timestamp = new Date();
+    this.created_ts = created_ts || new Date();
+    this.updated_ts = _id ? new Date() : null;
   }
   send(callback) {
     if (!this.content) {
@@ -21,11 +20,17 @@ class Letter {
       callback({ title: "Invalid Author", timestamp: this.timestamp });
       return;
     }
-    getDb()
-      .collection("daak-room-letters")
-      .insertOne(this)
+    let dbOperation;
+    if (this._id) {
+      dbOperation = getDb()
+        .collection("daak-room-letters")
+        .updateOne({ _id: this._id }, { $set: this });
+    } else {
+      dbOperation = getDb().collection("daak-room-letters").insertOne(this);
+    }
+    dbOperation
       .then((result) => {
-        callback({ isCreated: result.acknowledged, ...this });
+        callback(this);
       })
       .catch((err) => {
         console.log(err);
@@ -42,6 +47,20 @@ class Letter {
       .catch((err) => {
         console.log(err);
       });
+  }
+  static findById(letterId, callback) {
+    getDb()
+      .collection("daak-room-letters")
+      .findOne({ _id: new ObjectId(letterId) })
+      .then((response) => callback(response))
+      .catch((err) => console.log(err));
+  }
+  static deleteById(letterId, callback) {
+    return getDb()
+      .collection("daak-room-letters")
+      .deleteOne({ _id: new ObjectId(letterId) })
+      .then((response) => response)
+      .catch((err) => err);
   }
 }
 module.exports = Letter;

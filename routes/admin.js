@@ -5,16 +5,17 @@ const {
   sendLetter,
   fetchLetter,
   fetchLetters,
+  updateLetter,
+  deleteLetter,
   fetchLettersByAuthor,
-} = require("../controller/Letter");
+} = require("../controller/letter-controller");
 
 const router = express.Router();
 
-router.get("/add-letter", (req, res) => {
-  res.sendFile(path.join(__dirname, "../", "views", "add-letter.html"));
-});
-router.get("/letters", fetchLetters);
-router.get("/lettersByAuthor", fetchLettersByAuthor);
 router.post("/send-letter", sendLetter);
+router.get("/letters", fetchLetters);
+router.get("/letters-by-author", fetchLettersByAuthor);
+router.put("/update-letter", updateLetter);
 router.get("/letter/:letterId", fetchLetter);
+router.delete("/remove-letter", deleteLetter);
 module.exports = router;

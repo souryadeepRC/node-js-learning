@@ -1,5 +1,6 @@
 const path = require("path");
 
+require('dotenv').config();
 const express = require("express");
 const bodyParser = require("body-parser");
 
@@ -19,6 +20,6 @@ app.use((req, res) => {
 });
 
 mongoDb.connectDb(() => {
-  const port = process.env.port || 3000;
+  const port = process.env.port || 8000;
   app.listen(port);
 });
