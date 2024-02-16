@@ -1,8 +1,7 @@
 const sendError = (res, errorResInfo) => (error) => {
-  res.status(501).json({
+  res.status(404).json({
     ...errorResInfo,
-    message: "Error occurred!",
-    error: error.toString(),
+    error_description: error.message || "Error Occurred!",
   });
 };
 module.exports = {

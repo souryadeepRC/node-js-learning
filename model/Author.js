@@ -9,6 +9,7 @@ const AuthorSchema = new Schema({
     type: String,
     required: true,
   },
+  username: String,
   name: {
     firstName: String,
     lastName: String,

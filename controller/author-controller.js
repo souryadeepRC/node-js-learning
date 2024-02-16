@@ -5,7 +5,7 @@ const Letter = require("../model/Letter");
 const { sendError } = require("./common-controller");
 
 const signUpAuthor = (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, username } = req.body;
   Author.findOne({ email: email })
     .then((result) => {
       if (result) {
@@ -14,7 +14,11 @@ const signUpAuthor = (req, res) => {
       return bcryptjs
         .hash(password, 12)
         .then((hashedPassword) => {
-          const author = new Author({ email, password: hashedPassword });
+          const author = new Author({
+            email,
+            password: hashedPassword,
+            username,
+          });
           author
             .save()
             .then((data) => {
@@ -25,6 +29,34 @@ const signUpAuthor = (req, res) => {
         .catch(sendError(res));
     })
     .catch(sendError(res));
+};
+const loginAuthor = (req, res) => {
+  Author.findOne({ email: req.body.email })
+    .then((author) => {
+      if (!author) {
+        throw new Error("We cannot find an account with that email address");
+      }
+      bcryptjs
+        .compare(req.body.password, author.password)
+        .then((isAuthenticated) => {
+          if (isAuthenticated) {
+            const { email, username } = author;
+            return res.status(200).json({ email, username });
+          }
+          throw new Error(`Dear ${author.email} please enter correct password`);
+        })
+        .catch(sendError(res));
+    })
+    .catch(sendError(res));
+};
+const verifyLoginOtp = (req, res) => {
+  const receivedOtp = req.body.otp;
+  if (receivedOtp === "8574") {
+    return res.status(200).json({ isLoginVerified: true });
+  }
+  res.status(404).json({
+    error_description: "Invalid OTP",
+  });
 };
 const updateAuthor = (req, res) => {
   const author = new Author(req.body);
@@ -61,6 +93,8 @@ const fetchLetter = (req, res) => {
 };
 module.exports = {
   signUpAuthor,
+  loginAuthor,
+  verifyLoginOtp,
   updateAuthor,
   fetchLetters,
   fetchLetter,
