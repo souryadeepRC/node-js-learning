@@ -1,4 +1,5 @@
 const bcryptjs = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const Author = require("../model/Author");
 const Letter = require("../model/Letter");
@@ -30,6 +31,11 @@ const signUpAuthor = (req, res) => {
     })
     .catch(sendError(res));
 };
+const createToken = (id) => {
+  return jwt.sign({ id }, "Souryadeep super secret key", {
+    expiresIn: 2 * 60,
+  });
+};
 const loginAuthor = (req, res) => {
   Author.findOne({ email: req.body.email })
     .then((author) => {
@@ -41,13 +47,52 @@ const loginAuthor = (req, res) => {
         .then((isAuthenticated) => {
           if (isAuthenticated) {
             const { email, username } = author;
-            return res.status(200).json({ email, username });
+            const accessToken = createToken(author._id);
+            /* res.cookie("jwt", accessToken, {
+              withCrdentials: false,
+              httpOnly: false,
+              maxAge: 2 * 60 * 1000,
+            }); */
+
+            req.session.isLoggedIn = author.username; 
+            return res.status(200).json({ email, username, accessToken });
           }
           throw new Error(`Dear ${author.email} please enter correct password`);
         })
         .catch(sendError(res));
     })
     .catch(sendError(res));
+};
+const logoutAuthor = (req,res) => { 
+  req.session.destroy(err => { 
+    res.json({err})
+  })
+}
+const getAuthor = (req, res) => {
+  // ?isLoggedInUser=true&userId=
+  const bearerToken = req.headers.authorization;
+  const token = bearerToken?.replace(/^Bearer\s+/, "");
+
+  if (token) {
+    jwt.verify(token, "Souryadeep super secret key", (err, decoded) => {
+      if (err) {
+        return res.json({
+          success: false,
+          message: "Token is not valid",
+        });
+      }
+      Author.findById(decoded.id)
+        .then((data) => {
+          res.status(200).json(data);
+        })
+        .catch(sendError(res));
+    });
+  } else {
+    return res.json({
+      success: false,
+      message: "Token not provided",
+    });
+  }
 };
 const verifyLoginOtp = (req, res) => {
   const receivedOtp = req.body.otp;
@@ -76,6 +121,7 @@ const updateAuthor = (req, res) => {
     .catch(sendError(res));
 };
 const fetchLetters = (req, res) => {
+  req.session.isLoggedIn = true;
   Letter.find({ author: req.body.author_id })
     .select("content price")
     .then((response) => {
@@ -94,8 +140,9 @@ const fetchLetter = (req, res) => {
 module.exports = {
   signUpAuthor,
   loginAuthor,
+  getAuthor,
   verifyLoginOtp,
   updateAuthor,
-  fetchLetters,
+  fetchLetters,logoutAuthor,
   fetchLetter,
 };
